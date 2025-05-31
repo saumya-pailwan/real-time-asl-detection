@@ -40,6 +40,14 @@ for split_name, path in SPLIT_PATHS.items():
 		json.dump(filtered, fout, indent=2)
 	print(f"→ {split_name} → {len(filtered)} entries saved to {out_path}")
 
+	# Add to list of all files
+	all_top100_entries.extend(filtered)
+
+all_out = os.path.join(FILTERED_DIR, "all_top100.json")
+with open(all_out, "w", encoding="utf-8") as fout:
+    json.dump(all_top100_entries, fout, indent=2)
+print(f"→ total across train/val/test: {len(all_top100_entries)} entries → saved to {all_out}")
+
 #Split Verification to check for missing labels
 split_paths = {
     "train": "msasl_top100_splits/train_top100.json",
