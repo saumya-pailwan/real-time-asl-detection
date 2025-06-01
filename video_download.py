@@ -33,21 +33,21 @@ def download_relevant_clip(url: str, start: float, end: float, output_path: str)
 	end_hhmm   = seconds_to_hhmmss(end)
 	section_arg = f"*{start_hhmm}-{end_hhmm}"
 
-	cmd = f"yt-dlp --quiet --format mp4 --download-sections {section_arg} --output {output_path} {url}"
+	cmd = f"yt-dlp --quiet --format bestvideo[height<=144]+bestaudio/best[height<=144] --merge-output-format mp4 --download-sections {section_arg} --output {output_path} {url}"
 
 	try:
 		subprocess.run(cmd, check=True)
 	except subprocess.CalledProcessError as e:
 		print(f"[ERROR] yt-dlp failed for URL {url} with section {section_arg}")
-		print("  → Command:", " ".join(cmd))
+		print("  → Command:", "".join(cmd))
 		raise e
 	
 def clip_split(split_name: str, json_path: str):
 	# Load JSON and create new directory
-    with open(json_path, "r", encoding="utf-8") as f:
-        entries = json.load(f)
-    print(f"\n→ Processing split '{split_name}' ({len(entries)} entries)")
-
+	with open(json_path, "r", encoding="utf-8") as f:
+		entries = json.load(f)
+	print(f"\n→ Processing split '{split_name}' ({len(entries)} entries)")
+	
 	split_folder = os.path.join(CLIPS_DIR, split_name)
 	os.makedirs(split_name, exist_ok=True)
 
@@ -83,10 +83,13 @@ def clip_split(split_name: str, json_path: str):
 		
 	print(f"  → Done with '{split_name}' split. Clips saved to '{split_folder}'.\n")
 
-	
-
 def main():
 	for split_name, json_path in SPLIT_JSONS.items():
 		if not os.path.exists(json_path):
-			print(f"[ERROR] Expected JSON not found: {path}. Skipping '{split}'.")
+			print(f"[ERROR] Expected JSON not found: {json_path}. Skipping '{split_name}'.")
 			continue
+		clip_split(split_name, json_path)
+	print("All splits processed. Check the directories under", CLIPS_DIR)
+
+if __name__ == "__main__":
+    main()
