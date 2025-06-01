@@ -10,19 +10,31 @@ from save_utils import save_keypoints
 def load_json(json_path):
     with open(json_path, 'r') as f:
         data = json.load(f)
+
     samples = []
     for entry in data:
-        if "url" not in entry or not entry["url"].startswith("http"):
-            continue  # skip broken entries
+        # Ensure required fields exist
+        required_keys = ["url", "start_time", "end_time", "label", "clean_text", "file"]
+        if not all(k in entry for k in required_keys):
+            print("[!] Skipping entry due to missing fields:", entry)
+            continue
+
+        # Fix URL if needed
+        url = entry["url"]
+        if not url.startswith("http"):
+            url = "https://" + url
+
         samples.append({
-            "url": entry["url"],
+            "url": url,
             "label": entry["label"],
             "text": entry["clean_text"],
             "start_time": entry["start_time"],
             "end_time": entry["end_time"],
             "file": entry["file"]
         })
+
     return samples
+
 
 
 if __name__ == "__main__":
