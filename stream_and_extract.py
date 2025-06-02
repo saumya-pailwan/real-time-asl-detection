@@ -77,3 +77,64 @@ def process_video_clip(sample):
     except Exception as e:
         print(f"[Error] {sample['file']} - {e}")
         return None
+
+def pad_or_truncate_kp(kp_array: np.ndarray, T_max: int = 100):
+    """
+    kp_array: shape (n_frames, 126)
+    Returns:
+      - fixed_x: np.ndarray of shape (T_max, 126)
+      - mask:    np.ndarray of shape (T_max,), dtype=bool,
+                 where mask[t]=True if t < original_length, else False
+    """
+    n_frames, D = kp_array.shape
+    if n_frames >= T_max:
+        # Truncate to the first T_max frames
+        fixed_x = kp_array[:T_max, :]
+        mask    = np.ones((T_max,), dtype=bool)
+    else:
+        # Pad with zeros for (T_max - n_frames) rows
+        pad_amt = T_max - n_frames
+        padding = np.zeros((pad_amt, D), dtype=kp_array.dtype)
+        fixed_x = np.vstack([kp_array, padding])
+        mask    = np.concatenate([
+            np.ones((n_frames,), dtype=bool),
+            np.zeros((pad_amt,), dtype=bool)
+        ])
+    return fixed_x, mask
+
+def build_dataset(samples: list, T_max: int = 100):
+    """
+    samples: list of dicts, each containing at least:
+             {
+               "url":        "<video URL>",
+               "start_time": <float seconds>,
+               "end_time":   <float seconds>,
+               "label":      <int or string label>
+               # (optionally "file" or other metadata)
+             }
+    Returns:
+      X_all: np.ndarray of shape (N, T_max, 126)
+      mask:  np.ndarray of shape (N, T_max), dtype=bool
+      y_all: np.ndarray of shape (N,)
+    """
+    X_list    = []
+    mask_list = []
+    y_list    = []
+
+    for sample in samples:
+        kp = process_video_clip(sample)   # → None or an array of shape (n_frames, 126)
+        if kp is None:
+            # Skip any sample that failed processing
+            continue
+
+        fixed_x, m = pad_or_truncate_kp(kp, T_max=T_max)
+        X_list.append(fixed_x)
+        mask_list.append(m)
+        y_list.append(sample["label"])
+
+    # Stack into big arrays
+    X_all = np.stack(X_list, axis=0)     # shape = (N, T_max, 126)
+    mask  = np.stack(mask_list, axis=0)  # shape = (N, T_max)
+    y_all = np.array(y_list)             # shape = (N,)
+
+    return X_all, mask, y_all
