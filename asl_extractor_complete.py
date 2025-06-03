@@ -63,7 +63,7 @@ class ASLKeypointExtractor:
     
     def extract_keypoints_from_url(self, url: str, start_time: float = 0.0, 
                                  end_time: Optional[float] = None, 
-                                 max_frames: int = 50) -> Dict:
+                                 max_frames: int = 290) -> Dict:
         """
         Extract keypoints from video URL (YouTube or direct video URL)
         
@@ -173,8 +173,6 @@ class ASLKeypointExtractor:
                     keypoints_data["keypoints"].append({
                         "frame_number": current_frame_num,
                         "timestamp": current_frame_num / fps,
-                        "pose": keypoints.get("pose"),
-                        "face": keypoints.get("face"),
                         "left_hand": keypoints.get("left_hand"),
                         "right_hand": keypoints.get("right_hand")
                     })
@@ -205,12 +203,12 @@ class ASLKeypointExtractor:
         keypoints = {}
         
         # Extract pose keypoints
-        if results.pose_landmarks:
-            keypoints["pose"] = self._landmarks_to_array(results.pose_landmarks)
+        #if results.pose_landmarks:
+        #    keypoints["pose"] = self._landmarks_to_array(results.pose_landmarks)
         
         # Extract face keypoints (if enabled)
-        if results.face_landmarks:
-            keypoints["face"] = self._landmarks_to_array(results.face_landmarks)
+        #if results.face_landmarks:
+        #    keypoints["face"] = self._landmarks_to_array(results.face_landmarks)
         
         # Extract hand keypoints
         if results.left_hand_landmarks:
@@ -223,7 +221,7 @@ class ASLKeypointExtractor:
     
     def _landmarks_to_array(self, landmarks) -> List[List[float]]:
         """Convert MediaPipe landmarks to array format"""
-        return [[lm.x, lm.y, lm.z, getattr(lm, 'visibility', 1.0)] 
+        return [[lm.x, lm.y, lm.z] 
                 for lm in landmarks.landmark]
     
     def process_msasl_dataset(self, json_data: List[Dict], output_file: str, 
@@ -247,7 +245,7 @@ class ASLKeypointExtractor:
                 url=entry['url'],
                 start_time=entry.get('start_time', 0.0),
                 end_time=entry.get('end_time'),
-                max_frames=30  # Reduced for faster processing
+                max_frames=100  # Reduced for faster processing
             )
             
             # Combine original data with keypoints
@@ -259,13 +257,16 @@ class ASLKeypointExtractor:
             results.append(result)
             
             # Save progress every 5 samples
-            if (i + 1) % 5 == 0:
+            if (i + 1) % 100 == 0:
                 progress_file = f"{output_file.rsplit('.', 1)[0]}_progress_{i+1}.json"
                 self._save_results(results, progress_file)
                 print(f"  Progress saved to {progress_file}")
-        
+        cleaned_results = [
+            r for r in results
+            if not (isinstance(r.get("keypoints_data"), dict) and "error" in r["keypoints_data"])
+        ]
         # Save final results
-        self._save_results(results, output_file)
+        self._save_results(cleaned_results, output_file)
         print(f"\n Saved keypoints for {len(results)} samples to {output_file}")
     
     def _save_results(self, results: List[Dict], filename: str) -> None:

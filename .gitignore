@@ -1,1 +1,6 @@
-ASL_Dataset/
+train_keypoints.json
+train_keypoints_100_max_frame.json
+val_keypoints.json
+val_keypoints_100_max_frame.json
+test_keypoints.json
+test_keypoints_100_max_frame.json
