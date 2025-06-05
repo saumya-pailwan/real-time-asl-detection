@@ -228,14 +228,15 @@ class ASLKeypointExtractor:
         return hand_matrix, frame_count
 
     def run_realtime_extraction(self):
+        HOP = 30
+
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
             raise RuntimeError("Unable to access webcam")
 
         print("📸 Capturing. Press 'q' to quit.")
         buffer = deque(maxlen=MAX_FRAMES)
-        last_report_time = time.time()
-
+        frame_count = 0
         try:
             while True:
                 ret, frame = cap.read()
@@ -244,10 +245,9 @@ class ASLKeypointExtractor:
                     break
 
                 keypoints = self._extract_frame_keypoints(frame)
+                feature_vec = np.zeros((FEATURE_DIM,), dtype=np.float32)
 
                 if keypoints:
-                    feature_vec = np.zeros((FEATURE_DIM,), dtype=np.float32)
-
                     if "left_hand" in keypoints:
                         for idx, (x, y, z) in enumerate(keypoints["left_hand"]):
                             base = idx * 3
@@ -258,21 +258,20 @@ class ASLKeypointExtractor:
                             base = HAND_LANDMARKS * 3 + idx * 3
                             feature_vec[base:base + 3] = [x, y, z]
 
-                    buffer.append(feature_vec)
-                else:
-                    buffer.append(np.zeros((FEATURE_DIM,), dtype=np.float32))
+                buffer.append(feature_vec)
 
                 # Display the frame with landmarks
                 cv2.imshow("Webcam", frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
-                # Process model input every 1 second
-                if time.time() - last_report_time >= 1.0 and len(buffer) == MAX_FRAMES:
+                # Process input every HOP frames 
+                frame_count += 1
+
+                if frame_count % HOP == 0 and len(buffer) == MAX_FRAMES:
                     hand_matrix = np.stack(buffer, axis=0)
                     X, mask = prepare_input_for_model(hand_matrix)
                     yield X, mask
-                    last_report_time = time.time()
 
         finally:
             cap.release()
