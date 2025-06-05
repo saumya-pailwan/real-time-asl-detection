@@ -135,7 +135,7 @@ class ASLKeypointExtractor:
         
         # Convert BGR to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
+
         # Process with MediaPipe
         results = self.holistic.process(rgb_frame)
         
@@ -194,11 +194,12 @@ class ASLKeypointExtractor:
         try:
             while frame_count < max_frames:
                 ret, frame = cap.read()
-                #maybe flip here?
+                #30 fps
+                #maybe flip here, maybe not?
+                #frame = cv2.flip(frame, 1)
                 if not ret:
                     print("⚠️ Failed to grab frame")
                     break
-
                 keypoints = self._extract_frame_keypoints(frame)
                 if keypoints:
                     feature_vec = np.zeros((FEATURE_DIM,), dtype=np.float32)

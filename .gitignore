@@ -5,3 +5,5 @@ val_keypoints_100_max_frame.json
 test_keypoints.json
 test_keypoints_100_max_frame.json
 Alphabet/ASL_Dataset/
+Alphabet/ASL_Dataset_complete/
+Alphabet/Lexset/

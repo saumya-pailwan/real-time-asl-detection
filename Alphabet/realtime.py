@@ -10,7 +10,7 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
 # Load trained model
-with open('Alphabet/random_forest_model.pkl', 'rb') as f:
+with open('random_forest_model_lexasl_3D.pkl', 'rb') as f:
     model = pickle.load(f)
 
 
@@ -47,10 +47,10 @@ while cap.isOpened():
             # Extract features for prediction
             positions = []
             for landmark in hand_landmarks.landmark:
-                positions.extend([landmark.x, landmark.y])
+                positions.extend([landmark.x, landmark.y, landmark.z])
             
             # Predict
-            if len(positions) == 42:  # 21 landmarks * 2 (x,y)
+            if len(positions) == 63:  # 21 landmarks * 2 (x,y)
                 prediction = model.predict([positions])[0]
                 proba = model.predict_proba([positions])[0].max()
                 

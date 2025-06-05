@@ -33,4 +33,4 @@ for X, mask in extractor.run_realtime_extraction():
     y_proba = model.predict(X)  
     y_pred = np.argmax(y_proba, axis=1)
     label = le.inverse_transform(y_pred)
-    print(f"Predicted label: {label[0]}")
+    print(f"Predicted label: {label[0]} ({np.max(y_pred)})")
